@@ -12,12 +12,31 @@
 		Eye,
 		EyeSlash
 	} from '@steeze-ui/heroicons';
+	import { page } from '$app/stores';
 
 	let videoStream: MediaStream | null = null;
 	let overlayRef: any;
 	let videoRef: any;
 	let canvasRef: any;
 	let avatarRef: any;
+
+	/**
+	 * getBackgroundImage
+	 *
+	 * Get the background image based on the URL parameter.
+	 * Supports: weltraum, superhelden, or default (A7-Rallyeausweis.svg)
+	 */
+	function getBackgroundImage(): string {
+		const theme = $page.url.searchParams.get('ausweis');
+		switch (theme) {
+			case 'weltraum':
+				return "url('resources/weltraum-ausweis.svg')";
+			case 'superhelden':
+				return "url('resources/superhelden-ausweis.svg')";
+			default:
+				return "url('resources/A7-Rallyeausweis.svg')";
+		}
+	}
 
 	let cards = [
 		{ id: 1, name: null, imageSrc: null, specialAbility: null }
@@ -239,7 +258,7 @@
 									? 'relative grid aspect-[74/105] grid-cols-1 bg-gelb p-4 screen:h-96 print:grid print:h-[105mm] print:w-[74mm]'
 									: 'relative'}
 								style={showCardDetails
-									? "background-image: url('resources/A7-Rallyeausweis.svg'); background-size: cover; background-position: center; -webkit-print-color-adjust: exact; print-color-adjust: exact;"
+									? `background-image: ${getBackgroundImage()}; background-size: cover; background-position: center; -webkit-print-color-adjust: exact; print-color-adjust: exact;`
 									: ''}
 							>
 								<!-- REMOVE CARD BUTTON -->
