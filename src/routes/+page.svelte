@@ -10,7 +10,8 @@
 		Plus,
 		Minus,
 		Eye,
-		EyeSlash
+		EyeSlash,
+		ArrowPath
 	} from '@steeze-ui/heroicons';
 	import { page } from '$app/stores';
 
@@ -61,7 +62,7 @@
 	 *
 	 * remove a card from the list.
 	 */
-	async function removeCard(id) {
+	async function removeCard(id: number) {
 		cards = cards.filter((card) => card.id !== id);
 	}
 
@@ -76,13 +77,15 @@
 		showCardDetails = !showCardDetails;
 	}
 
+	let facingMode = 'user' // toggle front- and backcamera
+
 	// constraints for the video feed
 	const constraints = {
 		audio: false,
 		video: {
 			width: { ideal: 1280 },
 			height: { ideal: 720 },
-			facingMode: 'user'
+			facingMode: facingMode
 		}
 	};
 
@@ -102,8 +105,10 @@
 			navigator.mediaDevices
 				.getUserMedia(constraints)
 				.then((mediaStream) => {
+					console.log('Camera access successful:', mediaStream);
 					videoStream = mediaStream;
 					videoRef.srcObject = mediaStream;
+					console.log('Video stream assigned:', videoRef.srcObject);
 				})
 				.catch((err) => {
 					console.error(`${err.name}: ${err.message}`);
@@ -129,6 +134,13 @@
 		videoRef.srcObject = null;
 		overlayRef.classList.add('hidden');
 		window.removeEventListener('keydown', handleKeydown);
+	}
+
+	async function switchCamera() {
+		await stopStream();
+		facingMode = facingMode === 'user' ? 'environment' : 'user';
+		constraints.video.facingMode = facingMode;
+		await startStreamForCard(activeCardId);
 	}
 
 	/**
@@ -225,6 +237,9 @@
 			<button class="btn bg-rot text-white hover:bg-rot-dark" on:click={stopStream}
 				><Icon src={XMark} theme="mini" class="size-6" /> Schließen</button
 			>
+			<button class="btn bg-grau text-white" on:click={switchCamera} title="Kamera wechseln">
+				<Icon src={ArrowPath} theme="mini" class="size-6" />Kamera wechseln </button>
+
 			<button
 				class={videoStream
 					? 'btn bg-gelb text-grau hover:bg-gelb-dark'
@@ -304,7 +319,7 @@
 										class="mt-[27pt] flex flex-col items-center font-medium screen:text-lg print:mt-[10mm] print:text-sm"
 									>
 										<dd>
-											<input
+											<input disabled
 												type="text"
 												bind:value={card.name}
 												class="print-hide-placeholder block h-[20pt] w-[147pt] rounded-xl border-gray-300 px-2 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 print:h-[7.5mm] print:w-[54.10mm]"
@@ -312,7 +327,7 @@
 											/>
 										</dd>
 										<dd>
-											<input
+											<input disabled
 												type="text"
 												bind:value={card.specialAbility}
 												class="print-hide-placeholder mt-[23.5pt] block h-[20pt] w-[147pt] rounded-xl border-gray-300 px-2 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 print:mt-[8mm] print:h-[7.5mm] print:w-[54.10mm]"
