@@ -11,9 +11,12 @@
 		Minus,
 		Eye,
 		EyeSlash,
-		ArrowPath
+		ArrowPath,
+		Share
 	} from '@steeze-ui/heroicons';
 	import { page } from '$app/stores';
+	import { toBlob } from 'html-to-image';
+	import { tick } from 'svelte';
 
 	let videoStream: MediaStream | null = null;
 	let overlayRef: any;
@@ -136,6 +139,11 @@
 		window.removeEventListener('keydown', handleKeydown);
 	}
 
+	/**
+	 * switchCamera
+	 *
+	 * stops stream, switches camera and starts stream again.
+	 */
 	async function switchCamera() {
 		await stopStream();
 		facingMode = facingMode === 'user' ? 'environment' : 'user';
@@ -187,6 +195,50 @@
 		// avatarRef.classList.remove('hidden');
 		// stop webcam
 		stopStream();
+	}
+
+	/**
+	 * sharePhoto
+	 *
+	 * 
+	 */
+	async function sharePhotos() {
+		const files: File[] = []; // multiple pictures
+
+		showCardDetails = true;
+		await tick();
+
+		try {
+			for (const card of cards) {
+				if (!card.imageSrc) continue;
+				const element = document.getElementById(`card-${card.id}`);
+
+				if (!element) continue;
+
+				const blob = await toBlob(element, {
+					pixelRatio: 3,
+					filter: (node) => node.tagName !== 'BUTTON'
+				});
+
+				if (!blob) continue;
+
+				const file = new File([blob], `ausweis-${card.id}.png`, {
+					type: 'image/png'
+				});
+
+				files.push(file);
+			}
+
+			if (files.length === 0) return;
+
+			if (navigator.canShare && navigator.canShare({ files })) {
+				await navigator.share({ files });
+			} else {
+				console.warn('Sharing files is not supported.');
+			}
+		} catch (err) {
+			console.error('Could not share cards:', err);
+		}
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
@@ -269,6 +321,7 @@
 					>
 						<div class="h-full min-h-full items-center justify-center screen:flex">
 							<div
+								id={`card-${card.id}`}
 								class={showCardDetails
 									? 'relative grid aspect-[74/105] grid-cols-1 bg-gelb p-4 screen:h-96 print:grid print:h-[105mm] print:w-[74mm]'
 									: 'relative'}
@@ -368,6 +421,9 @@
 			>
 			<button class="btn bg-grau text-white hover:bg-grau-dark" on:click={() => window.print()}
 				><Icon src={Printer} theme="mini" class="size-6" />Drucken</button
+			>
+			<button class="btn bg-grau text-white hover:bg-grau-dark" on:click={sharePhotos}  disabled={!cards.some((card) => card.imageSrc)}
+				><Icon src={Share} theme="mini" class="size-6" />Ausweise teilen</button
 			>
 		</div>
 	</section>

@@ -2,12 +2,12 @@
 	"name": "ausweis-app",
 	"version": "0.0.3",
 	"type": "module",
-  "homepage": "https://github.com/cabi/ausweis-app",
-  "licence": "Apache 2.0",
-  "author": {
-    "name": "Carsten Biebricher",
-    "url": "https://github.com/cabi"
-  },
+	"homepage": "https://github.com/cabi/ausweis-app",
+	"licence": "Apache 2.0",
+	"author": {
+		"name": "Carsten Biebricher",
+		"url": "https://github.com/cabi"
+	},
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
@@ -40,6 +40,7 @@
 		"vite-plugin-mkcert": "^1.17.6"
 	},
 	"dependencies": {
-		"@tailwindcss/typography": "^0.5.15"
+		"@tailwindcss/typography": "^0.5.15",
+		"html-to-image": "^1.11.13"
 	}
 }
