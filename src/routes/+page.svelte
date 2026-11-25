@@ -15,8 +15,6 @@
 		Share
 	} from '@steeze-ui/heroicons';
 	import { page } from '$app/stores';
-	import { toBlob } from 'html-to-image';
-	import { tick } from 'svelte';
 
 	let videoStream: MediaStream | null = null;
 	let overlayRef: any;
@@ -40,6 +38,20 @@
 			default:
 				return "url('resources/A7-Rallyeausweis.svg')";
 		}
+	}
+
+	/**
+	 * loadImage
+	 *
+	 * Load an image and wait until its ready to be drawn onto the canvas.
+	 */
+	function loadImage(src: string): Promise<HTMLImageElement> {
+		return new Promise((resolve, reject) => {
+			const image = new Image();
+			image.onload = () => resolve(image);
+			image.onerror = reject;
+			image.src = src;
+		});
 	}
 
 	let cards = [
@@ -198,29 +210,58 @@
 	}
 
 	/**
-	 * sharePhoto
+	 * renderCard
 	 *
-	 * 
+	 * Draw the background and portrait onto a canvas.
+	 */
+	async function renderCard(imageSrc: string): Promise<Blob> {
+		const canvas = document.createElement('canvas');
+
+		canvas.width = 840;
+		canvas.height = 1191;
+
+		const context = canvas.getContext('2d')!;
+		context.scale(3, 3);
+
+		const backgroundSrc = getBackgroundImage().slice(5, -2);
+		const background = await loadImage(backgroundSrc);
+		const photo = await loadImage(imageSrc);
+
+		context.drawImage(background, 0, 0, 280, 397);
+
+		const x = 67;
+		const y = 86;
+		const size = 146;
+
+		context.save();
+		context.beginPath();
+		context.roundRect(x, y, size, size, 12);
+		context.clip();
+		context.drawImage(photo, x, y, size, size);
+		context.restore();
+
+		return new Promise<Blob>((resolve, reject) => {
+			canvas.toBlob((blob) => {
+				if (blob) resolve(blob);
+				else reject(new Error('Could not render card.'));
+			}, 'image/png');
+		});
+	}
+
+	/**
+	 * sharePhotos
+	 *
+	 * Convert all cards containing a photo into individual PNG files
+	 * and share them without changing the current view.
 	 */
 	async function sharePhotos() {
-		const files: File[] = []; // multiple pictures
-
-		showCardDetails = true;
-		await tick();
+		const files: File[] = [];
 
 		try {
 			for (const card of cards) {
 				if (!card.imageSrc) continue;
-				const element = document.getElementById(`card-${card.id}`);
 
-				if (!element) continue;
-
-				const blob = await toBlob(element, {
-					pixelRatio: 3,
-					filter: (node) => node.tagName !== 'BUTTON'
-				});
-
-				if (!blob) continue;
+				const blob = await renderCard(card.imageSrc);
 
 				const file = new File([blob], `ausweis-${card.id}.png`, {
 					type: 'image/png'
@@ -321,7 +362,6 @@
 					>
 						<div class="h-full min-h-full items-center justify-center screen:flex">
 							<div
-								id={`card-${card.id}`}
 								class={showCardDetails
 									? 'relative grid aspect-[74/105] grid-cols-1 bg-gelb p-4 screen:h-96 print:grid print:h-[105mm] print:w-[74mm]'
 									: 'relative'}
